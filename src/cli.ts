@@ -10,14 +10,15 @@ import { parseJobUrl } from "./url.js";
 const HELP = `RunReplay — inspect a GitHub Actions job
 
 Usage:
-  runreplay inspect <github-actions-job-url> [--json] [--token <github-token>]
-  runreplay resolve <github-actions-job-url> [--json] [--token <github-token>]
-  runreplay compare <failed-job-url> <baseline-job-url> [--json] [--token <github-token>]
-  runreplay compare <failed-job-url> --baseline last-successful [--json] [--token <github-token>]
+  runreplay inspect <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
+  runreplay resolve <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
+  runreplay compare <failed-job-url> <baseline-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
+  runreplay compare <failed-job-url> --baseline last-successful [--json] [--token <github-token>] [--api-base <api-url>]
 
 Authentication:
   Public repositories work without authentication, subject to GitHub rate limits.
   For private repositories or higher limits, set GITHUB_TOKEN or use --token.
+  For GitHub Enterprise Server, pass the job URL plus --api-base https://HOST/api/v3.
 
 Use --json for a stable machine-readable schema: 1.0 for inspect and compare, 1.1 for resolve.
 
@@ -30,14 +31,35 @@ interface CliArguments {
   baselineUrl?: string;
   baseline?: "last-successful";
   token?: string;
+  apiBase?: string;
   json: boolean;
 }
 
-function readArguments(args: string[]): CliArguments {
+export function normalizeApiBase(value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Expected --api-base to be an absolute HTTPS URL.");
+  }
+  if (url.protocol !== "https:") {
+    throw new Error("Expected --api-base to use https.");
+  }
+  if (url.username || url.password) {
+    throw new Error("Do not include credentials in --api-base.");
+  }
+  if (url.search || url.hash) {
+    throw new Error("Do not include a query string or fragment in --api-base.");
+  }
+  return url.toString().replace(/\/$/, "");
+}
+
+export function readArguments(args: string[], env: { GITHUB_TOKEN?: string } = process.env): CliArguments {
   if ((args[0] !== "inspect" && args[0] !== "resolve" && args[0] !== "compare") || !args[1]) throw new Error(HELP);
   const command = args[0];
   const url = args[1];
-  let token = process.env.GITHUB_TOKEN;
+  let token = env.GITHUB_TOKEN;
+  let apiBase: string | undefined;
   let json = false;
   let baselineUrl: string | undefined;
   let baseline: "last-successful" | undefined;
@@ -46,6 +68,9 @@ function readArguments(args: string[]): CliArguments {
       json = true;
     } else if (args[index] === "--token" && args[index + 1]) {
       token = args[index + 1];
+      index += 1;
+    } else if (args[index] === "--api-base" && args[index + 1]) {
+      apiBase = normalizeApiBase(args[index + 1]);
       index += 1;
     } else if (command === "compare" && args[index] === "--baseline" && args[index + 1] === "last-successful") {
       baseline = "last-successful";
@@ -59,7 +84,7 @@ function readArguments(args: string[]): CliArguments {
   if (command === "compare" && ((baselineUrl && baseline) || (!baselineUrl && !baseline))) {
     throw new Error(`Compare needs either a baseline job URL or --baseline last-successful.\n\n${HELP}`);
   }
-  return { command, url, baselineUrl, baseline, token, json };
+  return { command, url, baselineUrl, baseline, token, apiBase, json };
 }
 
 export function redactSensitiveText(value: string, token?: string): string {
@@ -112,10 +137,11 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
 
   let tokenForRedaction = process.env.GITHUB_TOKEN;
   try {
-    const { command, url, baselineUrl, baseline, token, json } = readArguments(args);
+    const { command, url, baselineUrl, baseline, token, apiBase, json } = readArguments(args);
     tokenForRedaction = token;
-    const client = new GithubClient(token);
-    const reference = parseJobUrl(url);
+    const client = new GithubClient(token, apiBase);
+    const parseOptions = { allowEnterpriseHost: apiBase !== undefined };
+    const reference = parseJobUrl(url, parseOptions);
     if (command === "inspect") {
       const inspection = await client.inspect(reference);
       console.log(json ? JSON.stringify(toJsonInspection(inspection), null, 2) : formatInspection(inspection));
@@ -125,7 +151,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     } else {
       const result = baseline === "last-successful"
         ? await client.compareWithLastSuccessful(reference)
-        : await client.compare(reference, parseJobUrl(baselineUrl!));
+        : await client.compare(reference, parseJobUrl(baselineUrl!, parseOptions));
       console.log(json ? JSON.stringify(result, null, 2) : formatCompareOutcome(result));
     }
   } catch (error) {

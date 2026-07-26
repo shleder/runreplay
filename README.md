@@ -18,6 +18,7 @@
   <a href="#what-you-get">What you get</a> ·
   <a href="#compare-a-failure-with-its-baseline">Compare</a> ·
   <a href="#machine-readable-output">JSON output</a> ·
+  <a href="./IMPACT.md">Impact</a> ·
   <a href="./ROADMAP.md">Roadmap</a> ·
   <a href="./CONTRIBUTING.md">Contributing</a>
 </p>
@@ -41,6 +42,16 @@ GITHUB_TOKEN=github_pat_... npx runreplay inspect <job-url>
 ```
 
 Do not paste tokens into an issue, shared shell history, or CI log.
+
+For GitHub Enterprise Server, pass the browser job URL and explicitly select the REST API base. RunReplay does not infer API hosts from job URLs:
+
+```bash
+GITHUB_TOKEN=github_pat_... npx runreplay inspect \
+  https://ghe.example.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID \
+  --api-base https://ghe.example.com/api/v3
+```
+
+Use an Enterprise token with read access to Actions and Contents for the target repository. `--api-base` must be an HTTPS API base URL and must not include credentials, query strings, or fragments.
 
 When GitHub rejects a request, RunReplay keeps the original status code and safe API message, then adds a short next step for common cases: invalid tokens, missing Actions or Contents read access, rate limits, missing jobs, and expired logs or artifacts.
 
@@ -144,6 +155,18 @@ RunReplay reads successful workflow runs page by page, up to 1,000 runs. If that
 
 `changedInputs` is deliberately descriptive, not an AI diagnosis: a changed Action SHA or runner image is an investigation lead, not proof of the failure's cause.
 
+## Public investigations
+
+RunReplay is used on public CI failures before a fix is proposed. The first documented investigation is [actalog case 001](./docs/cases/case-001.md): a timezone-dependent Vue test, diagnosed from a failed-vs-successful CI comparison and fixed in an external PR.
+
+<p align="center">
+  <a href="./docs/cases/case-001.md">
+    <img src="./assets/readme/runreplay-v0.3-compare-demo.gif" width="100%" alt="RunReplay comparing a failed GitHub Actions job to its successful baseline and identifying a timezone-dependent frontend test.">
+  </a>
+</p>
+
+The current evidence counters live in [IMPACT.md](./IMPACT.md). They deliberately count only public, verifiable outcomes.
+
 ## Scope: facts first, replay later
 
 RunReplay is an **inspector**, not a VM time machine. It does not claim to restore a completed runner's filesystem, caches, secrets, service-container state, or other data GitHub did not retain.
@@ -168,7 +191,7 @@ The first public contribution paths are intentionally small and useful:
 
 - [recorded GitHub API fixtures](https://github.com/shleder/runreplay/issues/1);
 - [clearer authentication and rate-limit errors](https://github.com/shleder/runreplay/issues/2);
-- [GitHub Enterprise Server job URL support](https://github.com/shleder/runreplay/issues/3).
+- [richer artifact metadata](https://github.com/shleder/runreplay/issues/4).
 
 Read [CONTRIBUTING.md](./CONTRIBUTING.md), run the checks, and keep each pull request focused.
 

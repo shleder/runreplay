@@ -47,6 +47,30 @@ const failed: Inspection = {
   logsApiUrl: "",
 };
 
+test("uses the configured GitHub Enterprise Server API base", async () => {
+  const requests: string[] = [];
+  const fetchImpl: typeof fetch = async (input) => {
+    const url = new URL(String(input));
+    requests.push(url.href);
+    if (url.pathname.endsWith("/repos/acme/widgets/actions/jobs/700")) {
+      return Response.json({ ...job(700, "test", "failure"), run_id: 500 });
+    }
+    if (url.pathname.endsWith("/repos/acme/widgets/actions/runs/500")) {
+      return Response.json({ ...workflowRun(500, "2026-01-15T00:00:00Z"), conclusion: "failure" });
+    }
+    if (url.pathname.endsWith("/repos/acme/widgets/actions/runs/500/artifacts")) {
+      return Response.json({ artifacts: [] });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+  const client = new GithubClient(undefined, "https://ghe.example.test/api/v3", fetchImpl);
+
+  const result = await client.inspect({ owner: "acme", repo: "widgets", runId: 500, jobId: 700 });
+
+  assert.equal(result.logsApiUrl, "https://ghe.example.test/api/v3/repos/acme/widgets/actions/jobs/700/logs");
+  assert.ok(requests.every((request) => request.startsWith("https://ghe.example.test/api/v3/repos/acme/widgets/")));
+});
+
 test("finds a comparable run and job on their second API pages", async () => {
   const requests: string[] = [];
   const firstRunPage = Array.from({ length: 100 }, (_, index) => workflowRun(1_000 + index, "2026-01-16T00:00:00Z"));
