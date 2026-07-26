@@ -16,6 +16,7 @@
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
   <a href="#what-you-get">What you get</a> ·
+  <a href="#compare-a-failure-with-its-baseline">Compare</a> ·
   <a href="#machine-readable-output">JSON output</a> ·
   <a href="./ROADMAP.md">Roadmap</a> ·
   <a href="./CONTRIBUTING.md">Contributing</a>
@@ -28,6 +29,9 @@ npx runreplay inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_
 
 # Resolve the workflow source and Action revisions for the same historical job
 npx runreplay resolve https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
+
+# Compare a failed job with the last strictly comparable successful job
+npx runreplay compare https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID --baseline last-successful
 ```
 
 `npx` downloads the public CLI when needed; no clone or global install is required. RunReplay works without a token for public repositories, subject to GitHub's anonymous API limits. For private repositories, set a fine-grained `GITHUB_TOKEN` with read access to **Actions** and **Contents**:
@@ -109,6 +113,35 @@ RunReplay never resolves a mutable tag today and calls it historical truth. Ever
 
 Version 0.2 supports repository Actions, including actions declared from repository subdirectories. It explicitly reports local Actions, Docker Actions, dynamic expressions, and reusable workflows as unresolved where their execution cannot yet be proven.
 
+## Compare a failure with its baseline
+
+`compare` turns two historical jobs into a CI diff. It reports changes in workflow source, declared and historically observed Action revisions, runner labels, steps, artifacts, timing, commits, and changed files.
+
+```bash
+# Explicit baseline: first URL is the failed/target job, second is its baseline
+npx runreplay compare <failed-job-url> <baseline-job-url>
+
+# Automatic baseline: only an exact earlier successful match is accepted
+npx runreplay compare <failed-job-url> --baseline last-successful
+
+# Stable machine-readable report
+npx runreplay compare <failed-job-url> --baseline last-successful --json > comparison.json
+```
+
+For `last-successful`, RunReplay requires the same repository workflow, job name, event, branch, and runner labels. If no such completed successful job exists, it returns:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "baseline": null,
+  "reason": "no-comparable-successful-job"
+}
+```
+
+RunReplay reads successful workflow runs page by page, up to 1,000 runs. If that limit is reached before an exact match is found, it reports `baseline-search-limit-reached` and `searchedRuns: 1000` rather than claiming that no baseline exists.
+
+`changedInputs` is deliberately descriptive, not an AI diagnosis: a changed Action SHA or runner image is an investigation lead, not proof of the failure's cause.
+
 ## Scope: facts first, replay later
 
 RunReplay is an **inspector**, not a VM time machine. It does not claim to restore a completed runner's filesystem, caches, secrets, service-container state, or other data GitHub did not retain.
@@ -124,6 +157,7 @@ job URL
   ├── GitHub API ── retrieves job, workflow run, and artifact metadata
   ├── inspection ── formats evidence for humans or the versioned JSON schema
   └── resolve manifest ── historical workflow source + Action SHA evidence
+      └── compare ── strict baseline matching + factual CI diff
 ```
 
 ## Contribute

@@ -11,7 +11,7 @@ function inspection(path = ".github/workflows/ci.yml@main"): Inspection {
   return {
     reference: { owner: "acme", repo: "widgets", runId: 7, jobId: 9 },
     logsApiUrl: "https://api.github.com/repos/acme/widgets/actions/jobs/9/logs",
-    run: { id: 7, name: "CI", display_title: null, event: "push", status: "completed", conclusion: "failure", head_branch: "main", head_sha: "feedfacefeedfacefeedfacefeedfacefeedface", html_url: "", workflow_id: 3, path },
+    run: { id: 7, name: "CI", display_title: null, event: "push", status: "completed", conclusion: "failure", head_branch: "main", head_sha: "feedfacefeedfacefeedfacefeedfacefeedface", html_url: "", workflow_id: 3, path, created_at: "2026-07-26T12:00:00Z" },
     job: { id: 9, name: "test", status: "completed", conclusion: "failure", html_url: "", run_id: 7, run_url: "", head_sha: "feedfacefeedfacefeedfacefeedfacefeedface", started_at: null, completed_at: null, runner_name: null, runner_group_name: null, steps: [] },
     artifacts: [],
   };
