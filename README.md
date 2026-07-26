@@ -42,6 +42,8 @@ GITHUB_TOKEN=github_pat_... npx runreplay inspect <job-url>
 
 Do not paste tokens into an issue, shared shell history, or CI log.
 
+When GitHub rejects a request, RunReplay keeps the original status code and safe API message, then adds a short next step for common cases: invalid tokens, missing Actions or Contents read access, rate limits, missing jobs, and expired logs or artifacts.
+
 To install it once instead:
 
 ```bash
