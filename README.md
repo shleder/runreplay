@@ -43,6 +43,16 @@ GITHUB_TOKEN=github_pat_... npx runreplay inspect <job-url>
 
 Do not paste tokens into an issue, shared shell history, or CI log.
 
+For GitHub Enterprise Server, pass the browser job URL and explicitly select the REST API base. RunReplay does not infer API hosts from job URLs:
+
+```bash
+GITHUB_TOKEN=github_pat_... npx runreplay inspect \
+  https://ghe.example.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID \
+  --api-base https://ghe.example.com/api/v3
+```
+
+Use an Enterprise token with read access to Actions and Contents for the target repository. `--api-base` must be an HTTPS API base URL and must not include credentials, query strings, or fragments.
+
 To install it once instead:
 
 ```bash
@@ -179,7 +189,7 @@ The first public contribution paths are intentionally small and useful:
 
 - [recorded GitHub API fixtures](https://github.com/shleder/runreplay/issues/1);
 - [clearer authentication and rate-limit errors](https://github.com/shleder/runreplay/issues/2);
-- [GitHub Enterprise Server job URL support](https://github.com/shleder/runreplay/issues/3).
+- [richer artifact metadata](https://github.com/shleder/runreplay/issues/4).
 
 Read [CONTRIBUTING.md](./CONTRIBUTING.md), run the checks, and keep each pull request focused.
 
