@@ -18,6 +18,7 @@
   <a href="#what-you-get">What you get</a> ·
   <a href="#compare-a-failure-with-its-baseline">Compare</a> ·
   <a href="#machine-readable-output">JSON output</a> ·
+  <a href="./IMPACT.md">Impact</a> ·
   <a href="./ROADMAP.md">Roadmap</a> ·
   <a href="./CONTRIBUTING.md">Contributing</a>
 </p>
@@ -141,6 +142,18 @@ For `last-successful`, RunReplay requires the same repository workflow, job name
 RunReplay reads successful workflow runs page by page, up to 1,000 runs. If that limit is reached before an exact match is found, it reports `baseline-search-limit-reached` and `searchedRuns: 1000` rather than claiming that no baseline exists.
 
 `changedInputs` is deliberately descriptive, not an AI diagnosis: a changed Action SHA or runner image is an investigation lead, not proof of the failure's cause.
+
+## Public investigations
+
+RunReplay is used on public CI failures before a fix is proposed. The first documented investigation is [actalog case 001](./docs/cases/case-001.md): a timezone-dependent Vue test, diagnosed from a failed-vs-successful CI comparison and fixed in an external PR.
+
+<p align="center">
+  <a href="./docs/cases/case-001.md">
+    <img src="./assets/readme/runreplay-v0.3-compare-demo.gif" width="100%" alt="RunReplay comparing a failed GitHub Actions job to its successful baseline and identifying a timezone-dependent frontend test.">
+  </a>
+</p>
+
+The current evidence counters live in [IMPACT.md](./IMPACT.md). They deliberately count only public, verifiable outcomes.
 
 ## Scope: facts first, replay later
 
