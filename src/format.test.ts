@@ -6,7 +6,7 @@ import { Inspection } from "./types.js";
 const inspection: Inspection = {
   reference: { owner: "acme", repo: "widgets", runId: 12, jobId: 34 },
   logsApiUrl: "https://api.github.com/repos/acme/widgets/actions/jobs/34/logs",
-  run: { id: 12, name: "CI", display_title: "Test", event: "push", status: "completed", conclusion: "failure", head_branch: "main", head_sha: "deadbeef", html_url: "https://github.com/acme/widgets/actions/runs/12", workflow_id: 1, path: ".github/workflows/ci.yml@main" },
+  run: { id: 12, name: "CI", display_title: "Test", event: "push", status: "completed", conclusion: "failure", head_branch: "main", head_sha: "deadbeef", html_url: "https://github.com/acme/widgets/actions/runs/12", workflow_id: 1, path: ".github/workflows/ci.yml@main", created_at: "2026-07-26T10:00:00Z" },
   job: { id: 34, name: "test", status: "completed", conclusion: "failure", html_url: "https://github.com/acme/widgets/actions/runs/12/job/34", run_id: 12, run_url: "", head_sha: "deadbeef", started_at: null, completed_at: null, runner_name: null, runner_group_name: null, runner_labels: ["ubuntu-latest"], steps: [{ name: "Run tests", status: "completed", conclusion: "failure", number: 4, started_at: null, completed_at: null }] },
   artifacts: [{ id: 1, name: "test-results", size_in_bytes: 99, expired: false, archive_download_url: "https://api.github.com/artifacts/1/zip" }],
 };

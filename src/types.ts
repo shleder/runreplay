@@ -47,6 +47,7 @@ export interface GithubWorkflowRun {
   workflow_id: number;
   /** Workflow path returned as `.github/workflows/name.yml@ref` by GitHub. */
   path: string;
+  created_at: string;
 }
 
 export interface GithubArtifact {
@@ -100,4 +101,22 @@ export interface ResolveManifest {
   };
   actions: ResolvedAction[];
   limitations: string[];
+}
+
+/** The source and resolution evidence needed to compare two historical jobs. */
+export interface ResolvedJobContext {
+  inspection: Inspection;
+  manifest: ResolveManifest;
+  workflowSource: string;
+}
+
+export interface ChangedFile {
+  filename: string;
+  status: string;
+}
+
+export interface CommitComparison {
+  totalCommits: number;
+  files: ChangedFile[];
+  truncated: boolean;
 }

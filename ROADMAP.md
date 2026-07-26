@@ -21,7 +21,17 @@
 - [ ] Support GitHub Enterprise Server hosts.
 - [ ] Export a versioned, redacted inspection manifest.
 
-## v0.3 — best-effort local preparation
+## v0.3 — CI comparison engine
+
+- [x] Compare two explicit GitHub Actions jobs.
+- [x] Find the last earlier successful job only when workflow identity, job name, event, branch, and runner labels match exactly.
+- [x] Compare historical workflow source hashes, Action revision evidence, runner labels, steps, artifacts, timing, commits, and changed files.
+- [x] Export the versioned `1.0` comparison JSON schema.
+- [ ] Add recorded fixtures for changed Action SHAs and renamed jobs.
+- [ ] Add Markdown comparison formatting and Windows output snapshots.
+- [ ] Publish a real comparison demo GIF.
+
+## v0.4 — best-effort local preparation
 
 - [ ] Capture visible runner-image and matrix evidence when GitHub exposes it.
 - [ ] Generate a local reproduction checklist and container setup proposal.
