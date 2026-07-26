@@ -24,24 +24,26 @@
 ## Start with the failed job
 
 ```bash
-git clone https://github.com/shleder/runreplay.git
-cd runreplay
-npm install
-npm run build
-
-node dist/cli.js inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
+npx runreplay inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
 
 # Resolve the workflow source and Action revisions for the same historical job
-node dist/cli.js resolve https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
+npx runreplay resolve https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
 ```
 
-RunReplay works without a token for public repositories, subject to GitHub's anonymous API limits. For private repositories, set a fine-grained `GITHUB_TOKEN` with read access to **Actions** and **Contents**:
+`npx` downloads the public CLI when needed; no clone or global install is required. RunReplay works without a token for public repositories, subject to GitHub's anonymous API limits. For private repositories, set a fine-grained `GITHUB_TOKEN` with read access to **Actions** and **Contents**:
 
 ```bash
-GITHUB_TOKEN=github_pat_... node dist/cli.js inspect <job-url>
+GITHUB_TOKEN=github_pat_... npx runreplay inspect <job-url>
 ```
 
 Do not paste tokens into an issue, shared shell history, or CI log.
+
+To install it once instead:
+
+```bash
+npm install --global runreplay
+runreplay inspect <job-url>
+```
 
 ## See the inspection
 
@@ -93,7 +95,7 @@ The public schema is versioned from day one:
 `inspect` tells you what GitHub still exposes about a job. `resolve` adds the workflow source from the **commit that ran** and identifies the revision behind each supported `uses:` declaration:
 
 ```bash
-node dist/cli.js resolve <job-url> --json > manifest.json
+npx runreplay resolve <job-url> --json > manifest.json
 ```
 
 RunReplay never resolves a mutable tag today and calls it historical truth. Every Action record declares its evidence level:
@@ -135,6 +137,9 @@ The first public contribution paths are intentionally small and useful:
 Read [CONTRIBUTING.md](./CONTRIBUTING.md), run the checks, and keep each pull request focused.
 
 ```bash
+git clone https://github.com/shleder/runreplay.git
+cd runreplay
+npm install
 npm test
 npm run check
 ```

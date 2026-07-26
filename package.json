@@ -1,13 +1,18 @@
 {
   "name": "runreplay",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Inspect GitHub Actions jobs and capture the facts needed for reliable replay.",
   "type": "module",
   "bin": {
     "runreplay": "./dist/cli.js"
   },
   "files": [
-    "dist",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -25,12 +30,21 @@
     "typescript": "^5.8.3"
   },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shleder/runreplay.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shleder/runreplay/issues"
+  },
+  "homepage": "https://github.com/shleder/runreplay#readme",
   "keywords": [
     "github-actions",
     "ci",
     "debugging",
     "cli",
-    "replay"
+    "replay",
+    "github-actions-inspector"
   ],
   "dependencies": {
     "yaml": "^2.9.0"
