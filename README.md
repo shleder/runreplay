@@ -53,6 +53,8 @@ GITHUB_TOKEN=github_pat_... npx runreplay inspect \
 
 Use an Enterprise token with read access to Actions and Contents for the target repository. `--api-base` must be an HTTPS API base URL and must not include credentials, query strings, or fragments.
 
+When GitHub rejects a request, RunReplay keeps the original status code and safe API message, then adds a short next step for common cases: invalid tokens, missing Actions or Contents read access, rate limits, missing jobs, and expired logs or artifacts.
+
 To install it once instead:
 
 ```bash

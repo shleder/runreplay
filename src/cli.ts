@@ -87,14 +87,58 @@ export function readArguments(args: string[], env: { GITHUB_TOKEN?: string } = p
   return { command, url, baselineUrl, baseline, token, apiBase, json };
 }
 
+export function redactSensitiveText(value: string, token?: string): string {
+  let redacted = value;
+  if (token) redacted = redacted.split(token).join("[redacted]");
+  return redacted
+    .replace(/Authorization:\s*Bearer\s+\S+/gi, "[authorization redacted]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/(github_pat_|gh[opsru]_)[A-Za-z0-9_]+/g, "$1[redacted]");
+}
+
+export function githubApiFailureHints(error: GithubApiError): string[] {
+  const message = error.message.toLowerCase();
+  if (error.status === 401) {
+    return [
+      "Check GITHUB_TOKEN or --token. The token is missing, expired, or invalid for this repository.",
+    ];
+  }
+  if (
+    error.status === 429 ||
+    (error.status === 403 && (message.includes("rate limit") || message.includes("secondary rate limit")))
+  ) {
+    return [
+      "GitHub API rate limit reached. Set GITHUB_TOKEN or --token for a higher limit, or retry after the limit resets.",
+    ];
+  }
+  if (error.status === 403) {
+    return [
+      "The token can authenticate, but GitHub refused this request. For private repositories, use a token with read access to Actions and Contents.",
+    ];
+  }
+  if (error.status === 404) {
+    return [
+      "Check the owner, repository, run ID, and job ID. For private repositories, 404 can also mean the token cannot see the repository or Actions resource.",
+    ];
+  }
+  if (error.status === 410) {
+    return [
+      "GitHub says this resource is gone. Job logs or artifacts may have expired; RunReplay can only inspect metadata GitHub still retains.",
+    ];
+  }
+  return [];
+}
+
 export async function main(args = process.argv.slice(2)): Promise<void> {
   if (args[0] === "--help" || args[0] === "-h" || args.length === 0) {
     console.log(HELP);
     return;
   }
 
+  let tokenForRedaction = process.env.GITHUB_TOKEN;
   try {
     const { command, url, baselineUrl, baseline, token, apiBase, json } = readArguments(args);
+    tokenForRedaction = token;
     const client = new GithubClient(token, apiBase);
     const parseOptions = { allowEnterpriseHost: apiBase !== undefined };
     const reference = parseJobUrl(url, parseOptions);
@@ -111,10 +155,12 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
       console.log(json ? JSON.stringify(result, null, 2) : formatCompareOutcome(result));
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = redactSensitiveText(error instanceof Error ? error.message : "Unknown error", tokenForRedaction);
     console.error(`RunReplay failed: ${message}`);
-    if (error instanceof GithubApiError && error.status === 401) {
-      console.error("Supply a valid GITHUB_TOKEN for this repository.");
+    if (error instanceof GithubApiError) {
+      for (const hint of githubApiFailureHints(error)) {
+        console.error(redactSensitiveText(hint, tokenForRedaction));
+      }
     }
     process.exitCode = 1;
   }
