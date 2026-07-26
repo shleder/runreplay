@@ -216,8 +216,7 @@ job URL
 The first public contribution paths are intentionally small and useful:
 
 - [recorded GitHub API fixtures](https://github.com/shleder/runreplay/issues/1);
-- [clearer authentication and rate-limit errors](https://github.com/shleder/runreplay/issues/2);
-- [richer artifact metadata](https://github.com/shleder/runreplay/issues/4).
+- [redacted inspection-manifest export](https://github.com/shleder/runreplay/issues/5) (design in [docs/inspection-manifest.md](./docs/inspection-manifest.md)).
 
 Read [CONTRIBUTING.md](./CONTRIBUTING.md), run the checks, and keep each pull request focused.
 

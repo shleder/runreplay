@@ -3,7 +3,7 @@
 Updated: 2026-07-26
 
 - External merged PRs created using RunReplay: **0**
-- Unique external contributors: **0**
+- Unique external contributors: **1** ([11suixing11](https://github.com/11suixing11): [#8](https://github.com/shleder/runreplay/pull/8), [#9](https://github.com/shleder/runreplay/pull/9), [#10](https://github.com/shleder/runreplay/pull/10), [#11](https://github.com/shleder/runreplay/pull/11))
 - Public repositories investigated: **2**
 - Confirmed CI root causes: **2**
 - npm downloads (last week): **not reported yet**
