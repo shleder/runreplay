@@ -1,0 +1,28 @@
+name: Bug report
+description: Report incorrect inspection output or an unexpected failure.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Never include tokens, private URLs, secrets, or unredacted private logs."
+  - type: input
+    id: version
+    attributes:
+      label: RunReplay version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and sanitized output
+      description: Remove tokens and private repository details.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

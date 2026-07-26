@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a focused improvement to inspection or future replay preparation.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What debugging or maintenance task remains difficult?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Accuracy and safety limits
+      description: State what the feature can prove and what it cannot recover.
