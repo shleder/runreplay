@@ -43,6 +43,18 @@ GITHUB_TOKEN=github_pat_... npx runreplay inspect <job-url>
 
 Do not paste tokens into an issue, shared shell history, or CI log.
 
+For GitHub Enterprise Server, pass the browser job URL and explicitly select the REST API base. RunReplay does not infer API hosts from job URLs:
+
+```bash
+GITHUB_TOKEN=github_pat_... npx runreplay inspect \
+  https://ghe.example.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID \
+  --api-base https://ghe.example.com/api/v3
+```
+
+Use an Enterprise token with read access to Actions and Contents for the target repository. `--api-base` must be an HTTPS API base URL and must not include credentials, query strings, or fragments.
+
+When GitHub rejects a request, RunReplay keeps the original status code and safe API message, then adds a short next step for common cases: invalid tokens, missing Actions or Contents read access, rate limits, missing jobs, and expired logs or artifacts.
+
 To install it once instead:
 
 ```bash
@@ -90,10 +102,36 @@ The public schema is versioned from day one:
   "event": "push",
   "runner": { "labels": ["ubuntu-latest"] },
   "steps": [],
-  "artifacts": [],
+  "artifacts": [
+    {
+      "id": 7,
+      "name": "test-results",
+      "sizeInBytes": 42,
+      "expired": false,
+      "availability": "available",
+      "createdAt": "2026-07-26T10:02:00Z",
+      "updatedAt": "2026-07-26T10:03:00Z",
+      "expiresAt": "2026-08-25T10:02:00Z",
+      "digest": "sha256:…",
+      "workflowRun": {
+        "id": 123,
+        "repositoryId": 99,
+        "headRepositoryId": 100,
+        "headBranch": "main",
+        "headSha": "…"
+      },
+      "apiUrl": "https://api.github.com/repos/actions/checkout/actions/artifacts/7",
+      "archiveDownloadUrl": "https://api.github.com/artifacts/7/zip"
+    }
+  ],
   "redactions": []
 }
 ```
+
+Artifact metadata is additive within schema `1.0`: older consumers can ignore
+the extra fields, and missing GitHub fields are emitted as `null`. `availability`
+is derived from GitHub's `expired` flag so human and JSON output use the same
+state.
 
 ## Resolve manifest: what actually ran
 
@@ -179,7 +217,7 @@ The first public contribution paths are intentionally small and useful:
 
 - [recorded GitHub API fixtures](https://github.com/shleder/runreplay/issues/1);
 - [clearer authentication and rate-limit errors](https://github.com/shleder/runreplay/issues/2);
-- [GitHub Enterprise Server job URL support](https://github.com/shleder/runreplay/issues/3).
+- [richer artifact metadata](https://github.com/shleder/runreplay/issues/4).
 
 Read [CONTRIBUTING.md](./CONTRIBUTING.md), run the checks, and keep each pull request focused.
 

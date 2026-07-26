@@ -1,7 +1,33 @@
-import { Inspection } from "./types.js";
+import { artifactAvailability } from "./artifacts.js";
+import { GithubArtifact, Inspection } from "./types.js";
 
 function value(input: string | null | undefined): string {
   return input && input.trim() ? input : "—";
+}
+
+function shortSha(input: string | null | undefined): string {
+  return input && input.length > 12 ? input.slice(0, 12) : value(input);
+}
+
+function workflowRunLabel(artifact: GithubArtifact): string | null {
+  if (!artifact.workflow_run) return null;
+  const parts = [`#${artifact.workflow_run.id}`];
+  if (artifact.workflow_run.head_branch) parts.push(artifact.workflow_run.head_branch);
+  if (artifact.workflow_run.head_sha) parts.push(`@ ${shortSha(artifact.workflow_run.head_sha)}`);
+  return parts.join(" ");
+}
+
+function formatArtifact(artifact: GithubArtifact): string {
+  const lines = [
+    `  - ${artifact.name} (${artifact.size_in_bytes} bytes; ${artifactAvailability(artifact)})`,
+  ];
+  if (artifact.created_at) lines.push(`    Created: ${artifact.created_at}`);
+  if (artifact.expires_at) lines.push(`    Expires: ${artifact.expires_at}`);
+  const workflowRun = workflowRunLabel(artifact);
+  if (workflowRun) lines.push(`    Workflow run: ${workflowRun}`);
+  if (artifact.digest) lines.push(`    Digest: ${artifact.digest}`);
+  lines.push(`    Download: ${artifact.archive_download_url}`);
+  return lines.join("\n");
 }
 
 export function formatInspection(data: Inspection): string {
@@ -30,7 +56,7 @@ export function formatInspection(data: Inspection): string {
     "",
     `Artifacts (${data.artifacts.length}):`,
     ...(data.artifacts.length
-      ? data.artifacts.map((artifact) => `  - ${artifact.name} (${artifact.size_in_bytes} bytes; ${artifact.expired ? "expired" : "available"})\n    ${artifact.archive_download_url}`)
+      ? data.artifacts.map(formatArtifact)
       : ["  No artifacts attached to this workflow run."]),
   ];
   return lines.join("\n");
