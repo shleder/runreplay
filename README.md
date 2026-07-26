@@ -102,10 +102,36 @@ The public schema is versioned from day one:
   "event": "push",
   "runner": { "labels": ["ubuntu-latest"] },
   "steps": [],
-  "artifacts": [],
+  "artifacts": [
+    {
+      "id": 7,
+      "name": "test-results",
+      "sizeInBytes": 42,
+      "expired": false,
+      "availability": "available",
+      "createdAt": "2026-07-26T10:02:00Z",
+      "updatedAt": "2026-07-26T10:03:00Z",
+      "expiresAt": "2026-08-25T10:02:00Z",
+      "digest": "sha256:…",
+      "workflowRun": {
+        "id": 123,
+        "repositoryId": 99,
+        "headRepositoryId": 100,
+        "headBranch": "main",
+        "headSha": "…"
+      },
+      "apiUrl": "https://api.github.com/repos/actions/checkout/actions/artifacts/7",
+      "archiveDownloadUrl": "https://api.github.com/artifacts/7/zip"
+    }
+  ],
   "redactions": []
 }
 ```
+
+Artifact metadata is additive within schema `1.0`: older consumers can ignore
+the extra fields, and missing GitHub fields are emitted as `null`. `availability`
+is derived from GitHub's `expired` flag so human and JSON output use the same
+state.
 
 ## Resolve manifest: what actually ran
 
