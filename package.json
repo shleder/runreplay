@@ -1,6 +1,6 @@
 {
   "name": "runreplay",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Inspect GitHub Actions jobs and capture the facts needed for reliable replay.",
   "type": "module",
   "bin": {
