@@ -50,12 +50,26 @@ export interface GithubWorkflowRun {
   created_at: string;
 }
 
+export interface GithubArtifactWorkflowRun {
+  id: number;
+  repository_id?: number;
+  head_repository_id?: number;
+  head_branch?: string | null;
+  head_sha?: string | null;
+}
+
 export interface GithubArtifact {
   id: number;
+  url?: string;
   name: string;
   size_in_bytes: number;
   expired: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+  expires_at?: string | null;
+  digest?: string | null;
   archive_download_url: string;
+  workflow_run?: GithubArtifactWorkflowRun | null;
 }
 
 export interface Inspection {

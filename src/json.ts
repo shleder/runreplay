@@ -1,3 +1,4 @@
+import { artifactAvailability, ArtifactAvailability } from "./artifacts.js";
 import { Inspection } from "./types.js";
 
 export interface JsonInspection {
@@ -23,6 +24,19 @@ export interface JsonInspection {
     name: string;
     sizeInBytes: number;
     expired: boolean;
+    availability: ArtifactAvailability;
+    createdAt: string | null;
+    updatedAt: string | null;
+    expiresAt: string | null;
+    digest: string | null;
+    workflowRun: {
+      id: number;
+      repositoryId: number | null;
+      headRepositoryId: number | null;
+      headBranch: string | null;
+      headSha: string | null;
+    } | null;
+    apiUrl: string | null;
     archiveDownloadUrl: string;
   }>;
   logsApiUrl: string;
@@ -59,6 +73,21 @@ export function toJsonInspection(data: Inspection): JsonInspection {
       name: artifact.name,
       sizeInBytes: artifact.size_in_bytes,
       expired: artifact.expired,
+      availability: artifactAvailability(artifact),
+      createdAt: artifact.created_at ?? null,
+      updatedAt: artifact.updated_at ?? null,
+      expiresAt: artifact.expires_at ?? null,
+      digest: artifact.digest ?? null,
+      workflowRun: artifact.workflow_run
+        ? {
+            id: artifact.workflow_run.id,
+            repositoryId: artifact.workflow_run.repository_id ?? null,
+            headRepositoryId: artifact.workflow_run.head_repository_id ?? null,
+            headBranch: artifact.workflow_run.head_branch ?? null,
+            headSha: artifact.workflow_run.head_sha ?? null,
+          }
+        : null,
+      apiUrl: artifact.url ?? null,
       archiveDownloadUrl: artifact.archive_download_url,
     })),
     logsApiUrl: data.logsApiUrl,

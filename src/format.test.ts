@@ -8,7 +8,21 @@ const inspection: Inspection = {
   logsApiUrl: "https://api.github.com/repos/acme/widgets/actions/jobs/34/logs",
   run: { id: 12, name: "CI", display_title: "Test", event: "push", status: "completed", conclusion: "failure", head_branch: "main", head_sha: "deadbeef", html_url: "https://github.com/acme/widgets/actions/runs/12", workflow_id: 1, path: ".github/workflows/ci.yml@main", created_at: "2026-07-26T10:00:00Z" },
   job: { id: 34, name: "test", status: "completed", conclusion: "failure", html_url: "https://github.com/acme/widgets/actions/runs/12/job/34", run_id: 12, run_url: "", head_sha: "deadbeef", started_at: null, completed_at: null, runner_name: null, runner_group_name: null, runner_labels: ["ubuntu-latest"], steps: [{ name: "Run tests", status: "completed", conclusion: "failure", number: 4, started_at: null, completed_at: null }] },
-  artifacts: [{ id: 1, name: "test-results", size_in_bytes: 99, expired: false, archive_download_url: "https://api.github.com/artifacts/1/zip" }],
+  artifacts: [{
+    id: 1,
+    name: "test-results",
+    size_in_bytes: 99,
+    expired: false,
+    created_at: "2026-07-26T10:03:00Z",
+    expires_at: "2026-08-25T10:03:00Z",
+    digest: "sha256:def456",
+    archive_download_url: "https://api.github.com/artifacts/1/zip",
+    workflow_run: {
+      id: 12,
+      head_branch: "main",
+      head_sha: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    },
+  }],
 };
 
 test("formats the key replay facts", () => {
@@ -16,6 +30,11 @@ test("formats the key replay facts", () => {
   assert.match(output, /Commit SHA:\s+deadbeef/);
   assert.match(output, /\[failure\] Run tests/);
   assert.match(output, /test-results \(99 bytes; available\)/);
+  assert.match(output, /Created:\s+2026-07-26T10:03:00Z/);
+  assert.match(output, /Expires:\s+2026-08-25T10:03:00Z/);
+  assert.match(output, /Workflow run:\s+#12 main @ deadbeefdead/);
+  assert.match(output, /Digest:\s+sha256:def456/);
+  assert.match(output, /Download:\s+https:\/\/api\.github\.com\/artifacts\/1\/zip/);
 });
 
 test("uses the REST API labels field when runner_labels is absent", () => {
