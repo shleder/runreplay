@@ -4,7 +4,7 @@
   "description": "Inspect GitHub Actions jobs and capture the facts needed for reliable replay.",
   "type": "module",
   "bin": {
-    "runreplay": "./dist/cli.js"
+    "runreplay": "dist/cli.js"
   },
   "files": [
     "dist/**/*.js",
