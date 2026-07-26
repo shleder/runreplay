@@ -18,7 +18,7 @@
 - [x] Report unsupported local, Docker, dynamic, and reusable workflow declarations honestly.
 - [ ] Add API response fixtures and integration-test opt-in mode.
 - [ ] Explain API permission, rate-limit, and expired-artifact failures.
-- [ ] Support GitHub Enterprise Server hosts.
+- [x] Support GitHub Enterprise Server hosts when an explicit API base is provided.
 - [ ] Export a versioned, redacted inspection manifest.
 
 ## v0.3 — CI comparison engine
