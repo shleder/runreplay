@@ -88,6 +88,8 @@ npm run build
 node dist/cli.js --help
 ```
 
+The test command names the compiled test files explicitly so it behaves the same in Windows shells and Node 20 on GitHub Actions.
+
 ## Architecture
 
 ```text
