@@ -138,6 +138,8 @@ For `last-successful`, RunReplay requires the same repository workflow, job name
 }
 ```
 
+RunReplay reads successful workflow runs page by page, up to 1,000 runs. If that limit is reached before an exact match is found, it reports `baseline-search-limit-reached` and `searchedRuns: 1000` rather than claiming that no baseline exists.
+
 `changedInputs` is deliberately descriptive, not an AI diagnosis: a changed Action SHA or runner image is an investigation lead, not proof of the failure's cause.
 
 ## Scope: facts first, replay later

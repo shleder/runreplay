@@ -68,8 +68,11 @@ function formatNoBaseline(result: NoComparableBaseline): string {
     `Failed job: run ${result.failed.runId}, commit ${shortSha(result.failed.commitSha)}`,
     "Baseline: none",
     `Reason: ${result.reason}`,
+    ...(result.searchedRuns === undefined ? [] : [`Successful runs searched: ${result.searchedRuns}`]),
     "",
-    "RunReplay did not guess a baseline. No earlier successful job exactly matched the workflow identity, job name, event, branch, and runner labels.",
+    result.reason === "baseline-search-limit-reached"
+      ? "RunReplay stopped at its documented search limit and did not guess a baseline."
+      : "RunReplay did not guess a baseline. No earlier successful job exactly matched the workflow identity, job name, event, branch, and runner labels.",
   ].join("\n");
 }
 

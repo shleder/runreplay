@@ -13,6 +13,8 @@ export class GithubApiError extends Error {
 }
 
 export class GithubClient {
+  private static readonly BASELINE_RUN_SEARCH_LIMIT = 1_000;
+  private static readonly PAGE_SIZE = 100;
   constructor(
     private readonly token?: string,
     private readonly apiBase = "https://api.github.com",
@@ -79,36 +81,53 @@ export class GithubClient {
 
   async compareWithLastSuccessful(failedReference: JobReference): Promise<CompareOutcome> {
     const failed = await this.resolveContext(failedReference);
-    const baselineReference = await this.findLastSuccessfulReference(failed.inspection);
-    if (!baselineReference) {
+    const baselineSearch = await this.findLastSuccessfulReference(failed.inspection);
+    if (!baselineSearch.reference) {
       const noBaseline: NoComparableBaseline = {
         schemaVersion: "1.0",
         failed: toComparisonJob(failed),
         baseline: null,
-        reason: "no-comparable-successful-job",
+        reason: baselineSearch.limitReached ? "baseline-search-limit-reached" : "no-comparable-successful-job",
+        ...(baselineSearch.limitReached ? { searchedRuns: baselineSearch.searchedRuns } : {}),
       };
       return noBaseline;
     }
-    const baseline = await this.resolveContext(baselineReference);
+    const baseline = await this.resolveContext(baselineSearch.reference);
     const repository = await this.compareCommitFiles(baseline, failed);
     return compareResolvedJobs(baseline, failed, repository);
   }
 
-  private async findLastSuccessfulReference(failed: Inspection): Promise<JobReference | null> {
+  async findLastSuccessfulReference(failed: Inspection): Promise<{ reference: JobReference | null; searchedRuns: number; limitReached: boolean }> {
     const prefix = `/repos/${encodeURIComponent(failed.reference.owner)}/${encodeURIComponent(failed.reference.repo)}`;
-    const query = new URLSearchParams({ status: "success", per_page: "100" });
-    const runs = await this.get<{ workflow_runs: GithubWorkflowRun[] }>(`${prefix}/actions/workflows/${failed.run.workflow_id}/runs?${query}`);
+    const successfulRuns = await this.listSuccessfulWorkflowRuns(prefix, failed.run.workflow_id);
     const failedCreatedAt = Date.parse(failed.run.created_at);
-    const candidates = runs.workflow_runs
+    const candidates = successfulRuns.runs
       .filter((run) => run.id !== failed.run.id && (!Number.isFinite(failedCreatedAt) || Date.parse(run.created_at) < failedCreatedAt))
       .sort((left, right) => Date.parse(right.created_at) - Date.parse(left.created_at));
 
     for (const run of candidates) {
       const jobs = await this.listJobsForRun(prefix, run.id);
       const job = jobs.find((item) => isComparableSuccessfulJob(failed.run, failed.job, run, item));
-      if (job) return { owner: failed.reference.owner, repo: failed.reference.repo, runId: run.id, jobId: job.id };
+      if (job) {
+        return {
+          reference: { owner: failed.reference.owner, repo: failed.reference.repo, runId: run.id, jobId: job.id },
+          searchedRuns: successfulRuns.runs.length,
+          limitReached: false,
+        };
+      }
     }
-    return null;
+    return { reference: null, searchedRuns: successfulRuns.runs.length, limitReached: successfulRuns.limitReached };
+  }
+
+  private async listSuccessfulWorkflowRuns(prefix: string, workflowId: number): Promise<{ runs: GithubWorkflowRun[]; limitReached: boolean }> {
+    const runs: GithubWorkflowRun[] = [];
+    for (let page = 1; runs.length < GithubClient.BASELINE_RUN_SEARCH_LIMIT; page += 1) {
+      const query = new URLSearchParams({ status: "success", per_page: String(GithubClient.PAGE_SIZE), page: String(page) });
+      const response = await this.get<{ workflow_runs: GithubWorkflowRun[] }>(`${prefix}/actions/workflows/${workflowId}/runs?${query}`);
+      runs.push(...response.workflow_runs.slice(0, GithubClient.BASELINE_RUN_SEARCH_LIMIT - runs.length));
+      if (response.workflow_runs.length < GithubClient.PAGE_SIZE) return { runs, limitReached: false };
+    }
+    return { runs, limitReached: true };
   }
 
   private async compareCommitFiles(baseline: ResolvedJobContext, failed: ResolvedJobContext): Promise<CommitComparison | null> {
@@ -129,8 +148,13 @@ export class GithubClient {
   }
 
   private async listJobsForRun(prefix: string, runId: number): Promise<GithubJob[]> {
-    const response = await this.get<{ jobs: GithubJob[] }>(`${prefix}/actions/runs/${runId}/jobs?per_page=100`);
-    return response.jobs;
+    const jobs: GithubJob[] = [];
+    for (let page = 1; ; page += 1) {
+      const query = new URLSearchParams({ per_page: String(GithubClient.PAGE_SIZE), page: String(page) });
+      const response = await this.get<{ jobs: GithubJob[] }>(`${prefix}/actions/runs/${runId}/jobs?${query}`);
+      jobs.push(...response.jobs);
+      if (response.jobs.length < GithubClient.PAGE_SIZE) return jobs;
+    }
   }
 
   private async getCommitSha(owner: string, repo: string, repository: string, ref: string): Promise<string> {
