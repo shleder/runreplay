@@ -81,7 +81,9 @@ export interface NoComparableBaseline {
   schemaVersion: "1.0";
   failed: ComparisonJob;
   baseline: null;
-  reason: "no-comparable-successful-job";
+  reason: "no-comparable-successful-job" | "baseline-search-limit-reached";
+  /** Present only when RunReplay stopped at its documented workflow-run limit. */
+  searchedRuns?: number;
 }
 
 export type CompareOutcome = CompareReport | NoComparableBaseline;
