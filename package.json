@@ -1,6 +1,6 @@
 {
   "name": "runreplay",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Inspect GitHub Actions jobs and capture the facts needed for reliable replay.",
   "type": "module",
   "bin": {
@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
-    "test": "npm run build && node --test dist/cli.test.js dist/format.test.js dist/json.test.js dist/url.test.js",
+    "test": "npm run build && node --test dist/cli.test.js dist/format.test.js dist/json.test.js dist/resolve.test.js dist/url.test.js",
     "start": "node dist/cli.js"
   },
   "devDependencies": {
@@ -31,5 +31,8 @@
     "debugging",
     "cli",
     "replay"
-  ]
+  ],
+  "dependencies": {
+    "yaml": "^2.9.0"
+  }
 }

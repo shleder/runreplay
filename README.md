@@ -1,59 +1,77 @@
-# RunReplay
+<p align="center">
+  <img src="./assets/readme/runreplay-hero.svg" width="100%" alt="RunReplay inspects a failed GitHub Actions job and returns its commit SHA, runner, failed step, and artifacts.">
+</p>
 
-**Turn a failed GitHub Actions job URL into a factual debugging record.**
+<p align="center">
+  <a href="https://github.com/shleder/runreplay/actions/workflows/ci.yml"><img src="https://github.com/shleder/runreplay/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+  <a href="https://github.com/shleder/runreplay/releases"><img src="https://img.shields.io/github/v/release/shleder/runreplay?display_name=tag&amp;sort=semver" alt="Latest release"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-58a6ff" alt="Apache-2.0 license"></a>
+</p>
 
-AI can suggest a CI fix from a log. Maintainers still need the exact commit, job configuration, runner labels, failed step, and artifacts before they can judge or reproduce that fix. RunReplay collects those facts in one command.
+<p align="center">
+  <strong>Inspect any GitHub Actions job from your terminal.</strong><br>
+  Turn a job URL into the facts a maintainer needs before attempting a fix.
+</p>
 
-```bash
-runreplay inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
-```
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#what-you-get">What you get</a> ·
+  <a href="#machine-readable-output">JSON output</a> ·
+  <a href="./ROADMAP.md">Roadmap</a> ·
+  <a href="./CONTRIBUTING.md">Contributing</a>
+</p>
 
-Example output:
-
-```text
-RunReplay inspection
-
-Repository:       acme/widgets
-Workflow run:     CI (#123)
-Job:              test (456)
-Conclusion:       failure (completed)
-Commit SHA:       8e1f…
-Runner labels:    ubuntu-latest, X64
-
-Steps:
-  1. [success] Set up job
-  2. [failure] Run tests
-
-Artifacts (1):
-  - test-results (4821 bytes; available)
-```
-
-## What the MVP does
-
-- parses a GitHub Actions **job URL**;
-- fetches the job, workflow run, and workflow artifacts through the GitHub API;
-- reports the commit SHA, workflow event, branch, runner labels, job conclusion, timestamps, and every returned step;
-- prints authenticated API URLs for the job logs and artifact downloads.
-
-## What it does not do
-
-RunReplay **does not currently restore a past runner VM**. It cannot recover the vanished filesystem, caches, secrets, service-container state, or files that GitHub did not preserve as artifacts. The project deliberately does not claim exact job replay until that capability is implemented and independently verified.
-
-## Install and run
-
-Requirements: Node.js 20 or later.
+## Start with the failed job
 
 ```bash
+git clone https://github.com/shleder/runreplay.git
+cd runreplay
 npm install
 npm run build
+
 node dist/cli.js inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
+
+# Resolve the workflow source and Action revisions for the same historical job
+node dist/cli.js resolve https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
 ```
 
-For scripts, Claude integrations, `jq`, and CI bots, request the stable JSON schema:
+RunReplay works without a token for public repositories, subject to GitHub's anonymous API limits. For private repositories, set a fine-grained `GITHUB_TOKEN` with read access to **Actions** and **Contents**:
 
 ```bash
-node dist/cli.js inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID --json > inspection.json
+GITHUB_TOKEN=github_pat_... node dist/cli.js inspect <job-url>
 ```
+
+Do not paste tokens into an issue, shared shell history, or CI log.
+
+## See the inspection
+
+This is a real inspection of a public failed GitHub Actions job. RunReplay identifies the commit, hosted runner, failed step, and attached artifacts before anyone proposes a patch.
+
+<p align="center">
+  <a href="https://github.com/shleder/runreplay/releases/tag/v0.1.0">
+    <img src="https://github.com/shleder/runreplay/releases/download/v0.1.0/runreplay-v0.1-demo.gif" width="100%" alt="RunReplay inspecting a public failed GitHub Actions job; it reports a failed Dependabot step and no artifacts.">
+  </a>
+</p>
+
+## What you get
+
+| Evidence | Why it matters |
+| --- | --- |
+| Commit SHA and branch | Anchor the investigation to the code that actually ran. |
+| Workflow event and job conclusion | Separate a failing job from a broader workflow summary. |
+| Runner labels and timing | Show the available execution context GitHub exposes. |
+| Per-step results | Point directly to the failed command stage. |
+| Logs API URL and artifacts | Preserve the available trail for deeper investigation. |
+
+## Machine-readable output
+
+Use `--json` when the inspection feeds Claude, `jq`, a CI bot, or another tool:
+
+```bash
+node dist/cli.js inspect <job-url> --json > inspection.json
+```
+
+The public schema is versioned from day one:
 
 ```json
 {
@@ -70,51 +88,57 @@ node dist/cli.js inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/J
 }
 ```
 
-For private repositories (and to avoid low anonymous API limits), provide a fine-grained token with read access to **Actions** and **Contents**:
+## Resolve manifest: what actually ran
+
+`inspect` tells you what GitHub still exposes about a job. `resolve` adds the workflow source from the **commit that ran** and identifies the revision behind each supported `uses:` declaration:
 
 ```bash
-GITHUB_TOKEN=github_pat_... node dist/cli.js inspect https://github.com/OWNER/REPO/actions/runs/RUN_ID/job/JOB_ID
+node dist/cli.js resolve <job-url> --json > manifest.json
 ```
 
-You may also use `--token <token>`. Do not paste a token into an issue, shell history you share, or a CI log. The `runreplay` global command will be available after the package is published to npm.
+RunReplay never resolves a mutable tag today and calls it historical truth. Every Action record declares its evidence level:
 
-## Development
+| Evidence | Meaning |
+| --- | --- |
+| `runtime-log` | GitHub Runner recorded the exact SHA downloaded by this job. This is the strongest historical evidence. |
+| `declared-full-sha` | The workflow declared an immutable 40-character SHA. |
+| `github-api-current-ref` | GitHub resolved a mutable branch or tag now. It is useful context, not proof of the old run. |
+| `unresolved` | RunReplay lacks trustworthy evidence and says why instead of guessing. |
 
-```bash
-npm install
-npm test
-npm run check
-npm run build
-node dist/cli.js --help
-```
+Version 0.2 supports repository Actions, including actions declared from repository subdirectories. It explicitly reports local Actions, Docker Actions, dynamic expressions, and reusable workflows as unresolved where their execution cannot yet be proven.
 
-The test command names the compiled test files explicitly so it behaves the same in Windows shells and Node 20 on GitHub Actions.
+## Scope: facts first, replay later
+
+RunReplay is an **inspector**, not a VM time machine. It does not claim to restore a completed runner's filesystem, caches, secrets, service-container state, or other data GitHub did not retain.
+
+The resolve manifest finds the workflow source at the inspected commit and identifies supported Action revisions with explicit evidence. Matrix expansion, reusable workflow traversal, nested/composite Actions, and a best-effort local replay path remain future work. Every replay claim must be backed by explicit evidence and verification. See [the roadmap](./ROADMAP.md).
 
 ## Architecture
 
 ```text
-CLI
- ├─ URL parser              validates and extracts owner, repo, run, job
- ├─ GitHub API client       fetches job + run + artifacts
- ├─ Inspection formatter    produces a human-readable factual report
- └─ Replay pipeline (future)
-     ├─ workflow resolver
-     ├─ environment manifest
-     ├─ artifact importer
-     ├─ replay backend
-     └─ verification report
+job URL
+  │
+  ├── URL parser ── validates owner, repository, run, and job IDs
+  ├── GitHub API ── retrieves job, workflow run, and artifact metadata
+  ├── inspection ── formats evidence for humans or the versioned JSON schema
+  └── resolve manifest ── historical workflow source + Action SHA evidence
 ```
 
-The boundary is intentional: future replay backends consume an `Inspection` rather than making the CLI, GitHub API, and sandbox implementation one inseparable module. The JSON exporter converts that internal inspection into a versioned public schema.
+## Contribute
 
-## Roadmap
+The first public contribution paths are intentionally small and useful:
 
-See [ROADMAP.md](ROADMAP.md). The highest-value next work is explicit environment capture and a local, clearly-labelled **best-effort** replay path—not unverified claims of perfect VM restoration.
+- [recorded GitHub API fixtures](https://github.com/shleder/runreplay/issues/1);
+- [clearer authentication and rate-limit errors](https://github.com/shleder/runreplay/issues/2);
+- [GitHub Enterprise Server job URL support](https://github.com/shleder/runreplay/issues/3).
 
-## Contributing
+Read [CONTRIBUTING.md](./CONTRIBUTING.md), run the checks, and keep each pull request focused.
 
-Useful contributions include GitHub Enterprise Server URL support, JSON output, API fixtures, command-line UX, documentation, and the environment-manifest design. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+```bash
+npm test
+npm run check
+```
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+[Apache-2.0](./LICENSE)

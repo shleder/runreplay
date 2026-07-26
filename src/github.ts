@@ -1,4 +1,5 @@
-import { GithubArtifact, GithubJob, GithubWorkflowRun, Inspection, JobReference } from "./types.js";
+import { resolveManifest, workflowPathFromRun } from "./resolve.js";
+import { GithubArtifact, GithubJob, GithubWorkflowRun, Inspection, JobReference, ResolveManifest } from "./types.js";
 
 export class GithubApiError extends Error {
   constructor(
@@ -14,6 +15,7 @@ export class GithubClient {
   constructor(
     private readonly token?: string,
     private readonly apiBase = "https://api.github.com",
+    private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
   async inspect(reference: JobReference): Promise<Inspection> {
@@ -37,7 +39,56 @@ export class GithubClient {
     };
   }
 
+  async resolve(reference: JobReference): Promise<ResolveManifest> {
+    const inspection = await this.inspect(reference);
+    const prefix = `/repos/${encodeURIComponent(reference.owner)}/${encodeURIComponent(reference.repo)}`;
+    const workflowPath = workflowPathFromRun(inspection.run.path);
+    const workflowSource = await this.getContent(`${prefix}/contents/${workflowPath.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(inspection.run.head_sha)}`);
+
+    let runtimeLogs: string | null = null;
+    let runtimeLogsUnavailableReason: string | undefined;
+    try {
+      runtimeLogs = await this.getText(`${prefix}/actions/jobs/${reference.jobId}/logs`);
+    } catch (error) {
+      runtimeLogsUnavailableReason = error instanceof GithubApiError ? `GitHub API ${error.status}` : "unknown download error";
+    }
+
+    return resolveManifest(
+      { inspection, workflowSource, runtimeLogs, runtimeLogsUnavailableReason },
+      {
+        resolveCurrentRef: (repository, ref) => this.getCommitSha(reference.owner, reference.repo, repository, ref),
+        verifyDeclaredSha: (repository, sha) => this.getCommitSha(reference.owner, reference.repo, repository, sha),
+      },
+    );
+  }
+
+  private async getCommitSha(owner: string, repo: string, repository: string, ref: string): Promise<string> {
+    const [actionOwner, actionRepo] = repository.split("/");
+    const targetOwner = actionOwner || owner;
+    const targetRepo = actionRepo || repo;
+    const commit = await this.get<{ sha: string }>(`/repos/${encodeURIComponent(targetOwner)}/${encodeURIComponent(targetRepo)}/commits/${encodeURIComponent(ref)}`);
+    return commit.sha;
+  }
+
+  private async getContent(path: string): Promise<string> {
+    const content = await this.get<{ type: string; encoding: string; content: string }>(path);
+    if (content.type !== "file" || content.encoding !== "base64") {
+      throw new Error("GitHub did not return a base64-encoded workflow file.");
+    }
+    return Buffer.from(content.content.replace(/\n/g, ""), "base64").toString("utf8");
+  }
+
+  private async getText(path: string): Promise<string> {
+    const response = await this.request(path);
+    return response.text();
+  }
+
   private async get<T>(path: string): Promise<T> {
+    const response = await this.request(path);
+    return response.json() as Promise<T>;
+  }
+
+  private async request(path: string): Promise<Response> {
     const headers: Record<string, string> = {
       Accept: "application/vnd.github+json",
       "User-Agent": "runreplay-cli",
@@ -45,7 +96,7 @@ export class GithubClient {
     };
     if (this.token) headers.Authorization = `Bearer ${this.token}`;
 
-    const response = await fetch(`${this.apiBase}${path}`, { headers });
+    const response = await this.fetchImpl(`${this.apiBase}${path}`, { headers });
     if (!response.ok) {
       const body = await response.text();
       let message = `GitHub API returned ${response.status}.`;
@@ -57,6 +108,6 @@ export class GithubClient {
       }
       throw new GithubApiError(message, response.status);
     }
-    return response.json() as Promise<T>;
+    return response;
   }
 }

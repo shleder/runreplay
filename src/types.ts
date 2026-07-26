@@ -45,6 +45,8 @@ export interface GithubWorkflowRun {
   head_sha: string;
   html_url: string;
   workflow_id: number;
+  /** Workflow path returned as `.github/workflows/name.yml@ref` by GitHub. */
+  path: string;
 }
 
 export interface GithubArtifact {
@@ -61,4 +63,41 @@ export interface Inspection {
   run: GithubWorkflowRun;
   artifacts: GithubArtifact[];
   logsApiUrl: string;
+}
+
+export type ResolutionEvidence =
+  | "runtime-log"
+  | "declared-full-sha"
+  | "github-api-current-ref"
+  | "unresolved";
+
+export type ActionKind =
+  | "repository"
+  | "local"
+  | "docker"
+  | "reusable-workflow"
+  | "dynamic"
+  | "unknown";
+
+export interface ResolvedAction {
+  uses: string;
+  kind: ActionKind;
+  repository: string | null;
+  declaredRef: string | null;
+  declaredImmutable: boolean;
+  executedSha: string | null;
+  resolvedNowSha: string | null;
+  evidence: ResolutionEvidence;
+  reason?: string;
+}
+
+export interface ResolveManifest {
+  schemaVersion: "1.1";
+  workflow: {
+    path: string;
+    sourceCommitSha: string;
+    evidence: "workflow-run-api";
+  };
+  actions: ResolvedAction[];
+  limitations: string[];
 }

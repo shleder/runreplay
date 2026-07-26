@@ -8,9 +8,14 @@
 - [x] Support `GITHUB_TOKEN` for private repositories.
 - [x] Unit tests and continuous integration.
 
-## v0.2 — shareable inspection records
+## v0.2 — resolve manifest
 
 - [x] Add `--json` with the documented `1.0` schema for scripts and integrations.
+- [x] Fetch the workflow source at the historical run's `head_sha`.
+- [x] Parse supported `uses:` declarations from workflow jobs and steps.
+- [x] Extract executed Action SHAs from GitHub Runner logs when they are available.
+- [x] Label all Action resolution with explicit evidence instead of treating current tags as historical truth.
+- [x] Report unsupported local, Docker, dynamic, and reusable workflow declarations honestly.
 - [ ] Add API response fixtures and integration-test opt-in mode.
 - [ ] Explain API permission, rate-limit, and expired-artifact failures.
 - [ ] Support GitHub Enterprise Server hosts.
@@ -18,7 +23,6 @@
 
 ## v0.3 — best-effort local preparation
 
-- [ ] Resolve the workflow file and pinned action revisions at the inspected commit.
 - [ ] Capture visible runner-image and matrix evidence when GitHub exposes it.
 - [ ] Generate a local reproduction checklist and container setup proposal.
 - [ ] Import available artifacts on explicit user request.

@@ -28,7 +28,6 @@ Please add or update tests for changed behavior. Tests must not require a real G
 
 ## Good first contributions
 
-- JSON output for `inspect`.
 - Unit tests with recorded API fixtures.
 - Clearer error messages for GitHub API permissions and rate limits.
 - GitHub Enterprise Server URL parsing.
