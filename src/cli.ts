@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { formatCompareOutcome } from "./compare-format.js";
 import { formatInspection } from "./format.js";
@@ -10,6 +11,7 @@ import { parseJobUrl } from "./url.js";
 const HELP = `RunReplay — inspect a GitHub Actions job
 
 Usage:
+  runreplay --version
   runreplay inspect <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
   runreplay resolve <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
   runreplay compare <failed-job-url> <baseline-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
@@ -20,10 +22,21 @@ Authentication:
   For private repositories or higher limits, set GITHUB_TOKEN or use --token.
   For GitHub Enterprise Server, pass the job URL plus --api-base https://HOST/api/v3.
 
+Use --version or -v to print the installed version and exit.
 Use --json for a stable machine-readable schema: 1.0 for inspect and compare, 1.1 for resolve.
 
 This command captures GitHub's available job metadata. It does not claim to
 restore a past runner VM, its filesystem, caches, secrets, or service state.`;
+
+const require = createRequire(import.meta.url);
+
+function readPackageVersion(): string {
+  const packageJson = require("../package.json") as { version?: unknown };
+  if (typeof packageJson.version !== "string") {
+    throw new Error("package.json version is missing.");
+  }
+  return packageJson.version;
+}
 
 interface CliArguments {
   command: "inspect" | "resolve" | "compare";
@@ -130,6 +143,11 @@ export function githubApiFailureHints(error: GithubApiError): string[] {
 }
 
 export async function main(args = process.argv.slice(2)): Promise<void> {
+  if (args[0] === "--version" || args[0] === "-v") {
+    console.log(readPackageVersion());
+    return;
+  }
+
   if (args[0] === "--help" || args[0] === "-h" || args.length === 0) {
     console.log(HELP);
     return;

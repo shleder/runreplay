@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { githubApiFailureHints, normalizeApiBase, readArguments, redactSensitiveText } from "./cli.js";
@@ -11,6 +12,23 @@ test("prints help when run as a direct executable", () => {
   assert.equal(result.status, 0);
   assert.match(result.stdout, /RunReplay — inspect a GitHub Actions job/);
   assert.match(result.stdout, /--api-base/);
+  assert.match(result.stdout, /--version/);
+});
+
+test("prints the package version when run as a direct executable", () => {
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const packagePath = fileURLToPath(new URL("../package.json", import.meta.url));
+  const packageJson = JSON.parse(readFileSync(packagePath, "utf8")) as { version: string };
+
+  const longFlag = spawnSync(process.execPath, [cliPath, "--version"], { encoding: "utf8" });
+  assert.equal(longFlag.status, 0);
+  assert.equal(longFlag.stdout.trim(), packageJson.version);
+  assert.equal(longFlag.stderr, "");
+
+  const shortFlag = spawnSync(process.execPath, [cliPath, "-v"], { encoding: "utf8" });
+  assert.equal(shortFlag.status, 0);
+  assert.equal(shortFlag.stdout.trim(), packageJson.version);
+  assert.equal(shortFlag.stderr, "");
 });
 
 test("parses an explicit GitHub Enterprise Server API base", () => {
