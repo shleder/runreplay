@@ -19,15 +19,18 @@ RunReplay compared the failing master run with the last successful master run:
 
 A TOCTOU race in `WorkerThread.run()` (`src/anyio/_backends/_asyncio.py:1047`). The worker guarded result delivery with `if not self.loop.is_closed():`, but the event loop could close between that check and the `call_soon_threadsafe()` call, raising `RuntimeError: Event loop is closed` in the "AnyIO worker thread". Pytest surfaced it as `PytestUnhandledThreadExceptionWarning`. The rsloop backend's shutdown timing on Python 3.14 opened this window.
 
-## Fix
+## Proposed fix and validation
 
-[External PR #1245](https://github.com/agronholm/anyio/pull/1245) catches `RuntimeError` from `call_soon_threadsafe()` and drops the undeliverable result — the same idiom the codebase already uses for the selector thread (`src/anyio/_core/_asyncio_selector_thread.py:145-148`).
+[External PR #1245](https://github.com/agronholm/anyio/pull/1245) proposed catching `RuntimeError` from `call_soon_threadsafe()` and dropping the undeliverable result — the same lifecycle outcome the codebase already applies for the selector thread (`src/anyio/_core/_asyncio_selector_thread.py:145-148`).
 
-Local validation:
+The original PR CI passed, but the patch was **not accepted upstream**. On 2026-07-27, the maintainer closed it without merge because the PR template was removed and it contained neither a changelog entry nor regression tests. This case therefore records a confirmed behavior and a technically validated proposed fix, not an upstream merge.
 
-- deterministic A/B check driving `WorkerThread.run()` with a stub loop that closes between the `is_closed()` check and `call_soon_threadsafe()`: `RuntimeError` escapes at line 1048 without the patch, `run()` completes cleanly with it;
-- `pytest tests/test_from_thread.py tests/test_taskgroups.py` on Python 3.14.2: 940 passed, 10 skipped, 6 xfailed — no regression (the race itself is Linux-timing-dependent and does not reproduce on Windows).
+Follow-up local validation against current `master` (`caca0e0`):
+
+- a deterministic regression test with a stub loop that reports open at the guard and raises `RuntimeError("Event loop is closed")` from `call_soon_threadsafe()` fails without the patch because the error escapes the worker thread;
+- the same test passes with the proposed `try`/`except RuntimeError` result-delivery guard;
+- `python -m pytest tests/test_to_thread.py` with the patch: 51 passed, 30 skipped on Windows (optional winloop/rsloop backends unavailable).
 
 ## Result
 
-Waiting for upstream review.
+The external PR was closed without merge and does not count as an external merged contribution. A future submission requires a complete AnyIO PR template, a changelog entry, and the isolated regression test; no resubmission has been opened.
