@@ -18,6 +18,7 @@
   <a href="#what-you-get">What you get</a> ·
   <a href="#compare-a-failure-with-its-baseline">Compare</a> ·
   <a href="#machine-readable-output">JSON output</a> ·
+  <a href="#first-contributions-available">First contributions</a> ·
   <a href="./IMPACT.md">Impact</a> ·
   <a href="./ROADMAP.md">Roadmap</a> ·
   <a href="./CONTRIBUTING.md">Contributing</a>
@@ -209,6 +210,27 @@ job URL
   ├── inspection ── formats evidence for humans or the versioned JSON schema
   └── resolve manifest ── historical workflow source + Action SHA evidence
       └── compare ── strict baseline matching + factual CI diff
+```
+
+## First contributions available
+
+These small, unclaimed issues are a good way to get started. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contribution workflow; maintainers review focused pull requests promptly.
+
+| Issue | Typical size |
+| --- | --- |
+| [#12: malformed GitHub Actions job URL tests](https://github.com/shleder/runreplay/issues/12) | One test file |
+| [#13: artifact formatting edge-case tests](https://github.com/shleder/runreplay/issues/13) | Two test files |
+| [#14: expired-log (410) fixture scenario](https://github.com/shleder/runreplay/issues/14) | Fixture plus integration test |
+| [#15: rate-limit fixture scenarios](https://github.com/shleder/runreplay/issues/15) | Fixture plus integration test |
+| [#19: first-time contributor walkthrough](https://github.com/shleder/runreplay/issues/19) | One short documentation section |
+
+Before opening a pull request, run:
+
+```bash
+npm ci
+npm test
+npm run check
+git diff --check
 ```
 
 ## Contribute
