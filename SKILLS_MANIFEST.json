@@ -1,0 +1,96 @@
+{
+  "version": "4.0.0",
+  "project": "runreplay",
+  "runtimeIntegration": "CLAUDE_CODE_NATIVE_SKILL_DISCOVERY",
+  "installedCount": 8,
+  "skills": [
+    {
+      "localSkillName": "gpt-worktree-isolation",
+      "assignedRole": "gpt",
+      "localPath": ".claude/skills/gpt-worktree-isolation/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/gpt-worktree-isolation/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Orchestrates isolated git worktrees for runreplay candidate validation",
+      "localSha256": "7898429171e33964934ea7b296cdc5aa14acdda92dabf393cbd123ca4edb857b"
+    },
+    {
+      "localSkillName": "gpt-provider-retry-resume",
+      "assignedRole": "gpt",
+      "localPath": ".claude/skills/gpt-provider-retry-resume/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/gpt-provider-retry-resume/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Manages candidate checkpoint state, provider retries, and resume logic upon API errors",
+      "localSha256": "76c1b7e03d2441e1d144e12c7e2405385ffb194f81c844c1dae951900a3f9111"
+    },
+    {
+      "localSkillName": "kimi-root-cause-analysis",
+      "assignedRole": "kimi",
+      "localPath": ".claude/skills/kimi-root-cause-analysis/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/kimi-root-cause-analysis/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Diagnoses CLI job inspection, SHA resolution, and log parsing failures in runreplay",
+      "localSha256": "d097c52d19a2408b99c92638366568c456238c3951286d479718d602784a403c"
+    },
+    {
+      "localSkillName": "kimi-directive-spec",
+      "assignedRole": "kimi",
+      "localPath": ".claude/skills/kimi-directive-spec/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/kimi-directive-spec/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Defines precise implementation directives, file allowlists, and test specifications for Gemini",
+      "localSha256": "39fac5ed90142eed71f8f301027df5ba8c2ad7d9344dcba677d98a1f85896321"
+    },
+    {
+      "localSkillName": "kimi-diff-review",
+      "assignedRole": "kimi",
+      "localPath": ".claude/skills/kimi-diff-review/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/kimi-diff-review/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Reviews Gemini generated diffs against Kimi directive specifications and emits ACCEPT/RETRY/ABORT",
+      "localSha256": "871e826cfef5ab810f39b2078f96f5ab6e57eb0fb6c3289ddde1a2cbb034a68a"
+    },
+    {
+      "localSkillName": "gemini-full-file-author",
+      "assignedRole": "gemini",
+      "localPath": ".claude/skills/gemini-full-file-author/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/gemini-full-file-author/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Authors complete UTF-8 TypeScript source files for runreplay adhering to Kimi directives",
+      "localSha256": "c11ed4aa4f0346a2c74946d4bf5ca28724736311dc593eba13e18140f226efce"
+    },
+    {
+      "localSkillName": "gemini-regression-test-author",
+      "assignedRole": "gemini",
+      "localPath": ".claude/skills/gemini-regression-test-author/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/gemini-regression-test-author/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Authors node:test unit tests for runreplay to lock down fixed bug behaviors",
+      "localSha256": "e293a40118805bfac042eb2e45128f231143a347c410ea14908699ad832d7e57"
+    },
+    {
+      "localSkillName": "defensive-input-and-supply-chain-review",
+      "assignedRole": "shared",
+      "localPath": ".claude/skills/defensive-input-and-supply-chain-review/SKILL.md",
+      "sourceRepository": "https://github.com/shleder/runreplay",
+      "sourcePath": ".claude/skills/defensive-input-and-supply-chain-review/SKILL.md",
+      "pinnedSourceSha": "main",
+      "license": "Apache-2.0",
+      "adaptationSummary": "Validates external input safety, URL parsing boundaries, and dependency integrity for runreplay",
+      "localSha256": "71439776e692831788ac6eb72350fe04e3b86903ce5a4d9e7c50a0bf7477d7bd"
+    }
+  ]
+}
