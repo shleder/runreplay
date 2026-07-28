@@ -8,6 +8,7 @@
 ## Native Agents (.claude/agents/)
 - `kimi`: Kimi Architect & Reviewer agent definition.
 - `gemini`: Gemini Sole Code Author agent definition.
+- `kimi-author-fallback`: Isolated temporary code author, available only for confirmed Gemini quota exhaustion or credential cooldown after normal retries.
 
 ## Native Skills (.claude/skills/)
 1. `gpt-worktree-isolation` — Git worktree creation & isolation.
@@ -18,3 +19,7 @@
 6. `gemini-full-file-author` — Full-file JSON code implementation.
 7. `gemini-regression-test-author` — `node:test` regression test authoring.
 8. `defensive-input-and-supply-chain-review` — Input sanitization & security review.
+
+## Kimi Author Fallback
+
+Normal workflow is unchanged: Kimi architects/reviews and Gemini is the sole author. The `kimi-author-fallback` agent is an exception only for a confirmed Gemini quota-exhausted or credential-cooldown condition after normal retries. It receives a frozen directive, preloads only the two Gemini authoring skills, emits strict full-file JSON, and cannot modify files or approve its own work. The controller stages and validates its payload, dispatches a separate fresh Kimi reviewer, records the fallback audit hashes/routes, and returns future authoring to Gemini once Gemini is available.

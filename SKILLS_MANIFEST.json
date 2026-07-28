@@ -1,8 +1,27 @@
 {
-  "version": "4.0.0",
+  "version": "4.1.0",
   "project": "runreplay",
   "runtimeIntegration": "CLAUDE_CODE_NATIVE_SKILL_DISCOVERY",
   "installedCount": 8,
+  "agents": [
+    {
+      "localAgentName": "kimi-author-fallback",
+      "localPath": ".claude/agents/kimi-author-fallback.md",
+      "assignedRole": "kimi-author-fallback",
+      "activation": "confirmed Gemini quota-exhausted or credential-cooldown after normal retries",
+      "preloadedSkills": [
+        "gemini-full-file-author",
+        "gemini-regression-test-author"
+      ],
+      "auditFields": [
+        "fallback reason",
+        "author route",
+        "directive hash",
+        "payload hash",
+        "reviewer route"
+      ]
+    }
+  ],
   "skills": [
     {
       "localSkillName": "gpt-worktree-isolation",

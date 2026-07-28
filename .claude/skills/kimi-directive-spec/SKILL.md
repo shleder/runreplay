@@ -13,3 +13,4 @@ Defines unambiguous architectural specifications for Gemini code implementation.
 3. Provide explicit regression test specification.
 4. Set file allowlist and verification command (`npm test`).
 5. Require Gemini output strictly in production JSON schema: `{"task_id":"...","files":[{"path":"...","content":"..."}]}`.
+6. Before an authorized Kimi author fallback, freeze the directive and record its SHA-256 hash. The fallback author may execute only this exact directive.
