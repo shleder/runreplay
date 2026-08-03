@@ -2,6 +2,7 @@
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { formatCompareOutcome } from "./compare-format.js";
+import { formatCompareOutcomeMarkdown } from "./compare-markdown.js";
 import { formatInspection } from "./format.js";
 import { GithubApiError, GithubClient } from "./github.js";
 import { toJsonInspection } from "./json.js";
@@ -14,8 +15,8 @@ Usage:
   runreplay --version
   runreplay inspect <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
   runreplay resolve <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
-  runreplay compare <failed-job-url> <baseline-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
-  runreplay compare <failed-job-url> --baseline last-successful [--json] [--token <github-token>] [--api-base <api-url>]
+  runreplay compare <failed-job-url> <baseline-job-url> [--json | --format markdown | --md] [--token <github-token>] [--api-base <api-url>]
+  runreplay compare <failed-job-url> --baseline last-successful [--json | --format markdown | --md] [--token <github-token>] [--api-base <api-url>]
 
 Authentication:
   Public repositories work without authentication, subject to GitHub rate limits.
@@ -24,6 +25,7 @@ Authentication:
 
 Use --version or -v to print the installed version and exit.
 Use --json for a stable machine-readable schema: 1.0 for inspect and compare, 1.1 for resolve.
+Use --format markdown or --md with compare to print a GitHub-ready evidence block.
 
 This command captures GitHub's available job metadata. It does not claim to
 restore a past runner VM, its filesystem, caches, secrets, or service state.`;
@@ -46,6 +48,7 @@ interface CliArguments {
   token?: string;
   apiBase?: string;
   json: boolean;
+  markdown?: true;
 }
 
 export function normalizeApiBase(value: string): string {
@@ -74,6 +77,7 @@ export function readArguments(args: string[], env: { GITHUB_TOKEN?: string } = p
   let token = env.GITHUB_TOKEN;
   let apiBase: string | undefined;
   let json = false;
+  let markdown = false;
   let baselineUrl: string | undefined;
   let baseline: "last-successful" | undefined;
   for (let index = 2; index < args.length; index += 1) {
@@ -88,6 +92,11 @@ export function readArguments(args: string[], env: { GITHUB_TOKEN?: string } = p
     } else if (command === "compare" && args[index] === "--baseline" && args[index + 1] === "last-successful") {
       baseline = "last-successful";
       index += 1;
+    } else if (command === "compare" && args[index] === "--format" && args[index + 1] === "markdown") {
+      markdown = true;
+      index += 1;
+    } else if (command === "compare" && args[index] === "--md") {
+      markdown = true;
     } else if (command === "compare" && !args[index].startsWith("-") && !baselineUrl) {
       baselineUrl = args[index];
     } else {
@@ -97,7 +106,19 @@ export function readArguments(args: string[], env: { GITHUB_TOKEN?: string } = p
   if (command === "compare" && ((baselineUrl && baseline) || (!baselineUrl && !baseline))) {
     throw new Error(`Compare needs either a baseline job URL or --baseline last-successful.\n\n${HELP}`);
   }
-  return { command, url, baselineUrl, baseline, token, apiBase, json };
+  if (json && markdown) {
+    throw new Error(`Choose only one compare output format: --json, --format markdown, or --md.\n\n${HELP}`);
+  }
+  return {
+    command,
+    url,
+    baselineUrl,
+    baseline,
+    token,
+    apiBase,
+    json,
+    ...(markdown ? { markdown: true as const } : {}),
+  };
 }
 
 export function redactSensitiveText(value: string, token?: string): string {
@@ -155,7 +176,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
 
   let tokenForRedaction = process.env.GITHUB_TOKEN;
   try {
-    const { command, url, baselineUrl, baseline, token, apiBase, json } = readArguments(args);
+    const { command, url, baselineUrl, baseline, token, apiBase, json, markdown } = readArguments(args);
     tokenForRedaction = token;
     const client = new GithubClient(token, apiBase);
     const parseOptions = { allowEnterpriseHost: apiBase !== undefined };
@@ -170,7 +191,13 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
       const result = baseline === "last-successful"
         ? await client.compareWithLastSuccessful(reference)
         : await client.compare(reference, parseJobUrl(baselineUrl!, parseOptions));
-      console.log(json ? JSON.stringify(result, null, 2) : formatCompareOutcome(result));
+      console.log(
+        json
+          ? JSON.stringify(result, null, 2)
+          : markdown
+            ? formatCompareOutcomeMarkdown(result)
+            : formatCompareOutcome(result),
+      );
     }
   } catch (error) {
     const message = redactSensitiveText(error instanceof Error ? error.message : "Unknown error", tokenForRedaction);
