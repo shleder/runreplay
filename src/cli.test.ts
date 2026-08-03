@@ -13,6 +13,7 @@ test("prints help when run as a direct executable", () => {
   assert.match(result.stdout, /RunReplay — inspect a GitHub Actions job/);
   assert.match(result.stdout, /--api-base/);
   assert.match(result.stdout, /--version/);
+  assert.match(result.stdout, /--format markdown/);
 });
 
 test("prints the package version when run as a direct executable", () => {
@@ -48,6 +49,41 @@ test("parses an explicit GitHub Enterprise Server API base", () => {
       apiBase: "https://ghe.example.test/api/v3",
       json: false,
     },
+  );
+});
+
+test("parses both Markdown compare flags", () => {
+  const failed = "https://github.com/acme/widgets/actions/runs/123/job/456";
+  const baseline = "https://github.com/acme/widgets/actions/runs/100/job/200";
+
+  assert.deepEqual(readArguments(["compare", failed, baseline, "--format", "markdown"], {}), {
+    command: "compare",
+    url: failed,
+    baselineUrl: baseline,
+    baseline: undefined,
+    token: undefined,
+    apiBase: undefined,
+    json: false,
+    markdown: true,
+  });
+  assert.deepEqual(readArguments(["compare", failed, "--baseline", "last-successful", "--md"], {}), {
+    command: "compare",
+    url: failed,
+    baselineUrl: undefined,
+    baseline: "last-successful",
+    token: undefined,
+    apiBase: undefined,
+    json: false,
+    markdown: true,
+  });
+});
+
+test("rejects conflicting compare output flags", () => {
+  const failed = "https://github.com/acme/widgets/actions/runs/123/job/456";
+  const baseline = "https://github.com/acme/widgets/actions/runs/100/job/200";
+  assert.throws(
+    () => readArguments(["compare", failed, baseline, "--json", "--md"], {}),
+    /Choose only one compare output format/,
   );
 });
 
