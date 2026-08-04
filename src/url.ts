@@ -19,8 +19,15 @@ export function parseJobUrl(value: string, options: ParseJobUrlOptions = {}): Jo
   if (!isGithubDotCom && !options.allowEnterpriseHost) {
     throw new Error("Expected a URL hosted on github.com. For GitHub Enterprise Server, pass --api-base.");
   }
-  if (!isGithubDotCom && url.protocol !== "https:") {
-    throw new Error("Expected an https GitHub Enterprise Server job URL.");
+  if (url.protocol !== "https:") {
+    throw new Error(
+      isGithubDotCom
+        ? "Expected an https GitHub Actions job URL."
+        : "Expected an https GitHub Enterprise Server job URL.",
+    );
+  }
+  if (url.username || url.password) {
+    throw new Error("Expected a GitHub Actions job URL without embedded credentials.");
   }
 
   const match = url.pathname.match(/^\/([^/]+)\/([^/]+)\/actions\/runs\/(\d+)\/job\/(\d+)\/?$/);
