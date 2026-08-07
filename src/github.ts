@@ -1,5 +1,6 @@
 import { resolveManifest, workflowPathFromRun } from "./resolve.js";
 import { compareResolvedJobs, CompareOutcome, isComparableSuccessfulJob, NoComparableBaseline, toComparisonJob } from "./compare.js";
+import { buildCiEvidenceBundle, type CiEvidenceBundle } from "./evidence.js";
 import { CommitComparison, GithubArtifact, GithubJob, GithubWorkflowRun, Inspection, JobReference, ResolvedJobContext, ResolveManifest } from "./types.js";
 
 export class GithubApiError extends Error {
@@ -80,21 +81,18 @@ export class GithubClient {
   }
 
   async compareWithLastSuccessful(failedReference: JobReference): Promise<CompareOutcome> {
+    return this.compareResolvedWithLastSuccessful(await this.resolveContext(failedReference));
+  }
+
+  /**
+   * Collect one bounded, machine-readable evidence bundle without resolving the
+   * failed job twice. This is the integration surface intended for automated
+   * consumers; the result remains factual evidence rather than causal analysis.
+   */
+  async evidence(failedReference: JobReference): Promise<CiEvidenceBundle> {
     const failed = await this.resolveContext(failedReference);
-    const baselineSearch = await this.findLastSuccessfulReference(failed.inspection);
-    if (!baselineSearch.reference) {
-      const noBaseline: NoComparableBaseline = {
-        schemaVersion: "1.0",
-        failed: toComparisonJob(failed),
-        baseline: null,
-        reason: baselineSearch.limitReached ? "baseline-search-limit-reached" : "no-comparable-successful-job",
-        ...(baselineSearch.limitReached ? { searchedRuns: baselineSearch.searchedRuns } : {}),
-      };
-      return noBaseline;
-    }
-    const baseline = await this.resolveContext(baselineSearch.reference);
-    const repository = await this.compareCommitFiles(baseline, failed);
-    return compareResolvedJobs(baseline, failed, repository);
+    const comparison = await this.compareResolvedWithLastSuccessful(failed);
+    return buildCiEvidenceBundle(failed, comparison);
   }
 
   async findLastSuccessfulReference(failed: Inspection): Promise<{ reference: JobReference | null; searchedRuns: number; limitReached: boolean }> {
@@ -117,6 +115,23 @@ export class GithubClient {
       }
     }
     return { reference: null, searchedRuns: successfulRuns.runs.length, limitReached: successfulRuns.limitReached };
+  }
+
+  private async compareResolvedWithLastSuccessful(failed: ResolvedJobContext): Promise<CompareOutcome> {
+    const baselineSearch = await this.findLastSuccessfulReference(failed.inspection);
+    if (!baselineSearch.reference) {
+      const noBaseline: NoComparableBaseline = {
+        schemaVersion: "1.0",
+        failed: toComparisonJob(failed),
+        baseline: null,
+        reason: baselineSearch.limitReached ? "baseline-search-limit-reached" : "no-comparable-successful-job",
+        ...(baselineSearch.limitReached ? { searchedRuns: baselineSearch.searchedRuns } : {}),
+      };
+      return noBaseline;
+    }
+    const baseline = await this.resolveContext(baselineSearch.reference);
+    const repository = await this.compareCommitFiles(baseline, failed);
+    return compareResolvedJobs(baseline, failed, repository);
   }
 
   private async listSuccessfulWorkflowRuns(prefix: string, workflowId: number): Promise<{ runs: GithubWorkflowRun[]; limitReached: boolean }> {
