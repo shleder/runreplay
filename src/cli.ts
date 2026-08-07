@@ -9,7 +9,7 @@ import { toJsonInspection } from "./json.js";
 import { formatResolveManifest } from "./resolve-format.js";
 import { parseJobUrl } from "./url.js";
 
-const HELP = `RunReplay — inspect a GitHub Actions job
+const HELP = `RunReplay — inspect and package GitHub Actions evidence
 
 Usage:
   runreplay --version
@@ -17,6 +17,7 @@ Usage:
   runreplay resolve <github-actions-job-url> [--json] [--token <github-token>] [--api-base <api-url>]
   runreplay compare <failed-job-url> <baseline-job-url> [--json | --format markdown | --md] [--token <github-token>] [--api-base <api-url>]
   runreplay compare <failed-job-url> --baseline last-successful [--json | --format markdown | --md] [--token <github-token>] [--api-base <api-url>]
+  runreplay evidence <failed-job-url> [--token <github-token>] [--api-base <api-url>]
 
 Authentication:
   Public repositories work without authentication, subject to GitHub rate limits.
@@ -24,7 +25,8 @@ Authentication:
   For GitHub Enterprise Server, pass the job URL plus --api-base https://HOST/api/v3.
 
 Use --version or -v to print the installed version and exit.
-Use --json for a stable machine-readable schema: 1.0 for inspect and compare, 1.1 for resolve.
+Use --json for stable machine-readable output: schema 1.0 for inspect and compare, 1.1 for resolve.
+The evidence command always emits the stable machine-readable evidence schema 1.0.
 Use --format markdown or --md with compare to print a GitHub-ready evidence block.
 
 This command captures GitHub's available job metadata. It does not claim to
@@ -41,7 +43,7 @@ function readPackageVersion(): string {
 }
 
 interface CliArguments {
-  command: "inspect" | "resolve" | "compare";
+  command: "inspect" | "resolve" | "compare" | "evidence";
   url: string;
   baselineUrl?: string;
   baseline?: "last-successful";
@@ -71,7 +73,7 @@ export function normalizeApiBase(value: string): string {
 }
 
 export function readArguments(args: string[], env: { GITHUB_TOKEN?: string } = process.env): CliArguments {
-  if ((args[0] !== "inspect" && args[0] !== "resolve" && args[0] !== "compare") || !args[1]) throw new Error(HELP);
+  if ((args[0] !== "inspect" && args[0] !== "resolve" && args[0] !== "compare" && args[0] !== "evidence") || !args[1]) throw new Error(HELP);
   const command = args[0];
   const url = args[1];
   let token = env.GITHUB_TOKEN;
@@ -187,6 +189,8 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     } else if (command === "resolve") {
       const manifest = await client.resolve(reference);
       console.log(json ? JSON.stringify(manifest, null, 2) : formatResolveManifest(manifest));
+    } else if (command === "evidence") {
+      console.log(JSON.stringify(await client.evidence(reference), null, 2));
     } else {
       const result = baseline === "last-successful"
         ? await client.compareWithLastSuccessful(reference)
